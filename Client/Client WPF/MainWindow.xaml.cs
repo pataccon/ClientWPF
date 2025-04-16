@@ -16,8 +16,7 @@ using Path = System.IO.Path;
 using System.ComponentModel;
 using System.Threading;
 using System.Net;
-//using static System.Net.WebRequestMethods;
-
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Client_WPF
 {
@@ -28,7 +27,7 @@ namespace Client_WPF
     {
         private TcpClient _tcpClient;
         private NetworkStream _networkStream;
-        private Thread _listenerThread;
+        private Thread _listenThread;
         private BinaryWriter _writer;
 
         public MainWindow()
@@ -36,7 +35,6 @@ namespace Client_WPF
             InitializeComponent();
         }
 
-        // Connessione al server
         private void btnConnect_Click(object sender, RoutedEventArgs e)
         {
             string ip = txtInputip.Text;
@@ -46,19 +44,26 @@ namespace Client_WPF
             {
                 _tcpClient = new TcpClient(ip, port);
                 _networkStream = _tcpClient.GetStream();
-                _listenerThread = new Thread(ListenForMessages); // Thread per ricezione asincrona
-                _listenerThread.Start();
                 _writer = new BinaryWriter(_networkStream);
+                _listenThread = new Thread(ListenMsg);
+                _listenThread.Start();
 
 
                 btnConnect.IsEnabled = false;
-                btnDisconnect.IsEnabled = true;
+                btnConnect.Visibility = Visibility.Hidden;
 
-                ChatBox.AppendText("Connection Successful to server: " + ip + "\n");
+                btnDisconnect.IsEnabled = true;
+                btnDisconnect.Visibility = Visibility.Visible;
+
+                btnSend.IsEnabled = true;
+
+                btnSendFile.IsEnabled = true;
+
+                txtOutputChat.AppendText($"Connected successfully to the server:  {ip }\n");
             }
             catch (Exception ex)
             {
-                ChatBox.AppendText("Error connecting to server: " + ex.Message + "\n");
+                txtOutputChat.AppendText($"Error while trying to connect to the server: {ex.Message}\n");
             }
         }
 
@@ -71,30 +76,36 @@ namespace Client_WPF
         {
             _networkStream.Close();
             _tcpClient.Close();
-            _listenerThread.Interrupt();
+            _listenThread.Interrupt();
 
             btnConnect.IsEnabled = true;
-            btnDisconnect.IsEnabled = false;
+            btnConnect.Visibility = Visibility.Visible;
 
-            ChatBox.AppendText("Disconnected from server.\n");
+            btnDisconnect.IsEnabled = false;
+            btnDisconnect.Visibility = Visibility.Hidden;
+
+            btnSend.IsEnabled = false;
+
+            btnSendFile.IsEnabled = false;
+
+            txtOutputChat.AppendText("Disconnected from the server.\n");
         }
 
-        // Invio messaggi
         private void btnSend_Click(object sender, RoutedEventArgs e)
         {
-            string message = MessageTextBox.Text;
-            if (!string.IsNullOrEmpty(message))
+            string pureMessage=txtInputMessage.Text;
+            string message = ": " + pureMessage;
+            if (!string.IsNullOrEmpty(pureMessage))
             {
                 byte[] data = Encoding.ASCII.GetBytes(message);
                 Send(data);
-                ChatBox.AppendText("You: " + message + "\n");
+                txtOutputChat.AppendText("You" + message + "\n");
 
-                MessageTextBox.Clear();
+                txtInputMessage.Clear();
             }
         }
 
-        // Ricezione messaggi in background
-        private void ListenForMessages()
+        private void ListenMsg()
         {
             byte[] buffer = new byte[1024];
             int bytesRead;
@@ -106,27 +117,28 @@ namespace Client_WPF
                     bytesRead = _networkStream.Read(buffer, 0, buffer.Length);
                     if (bytesRead == 0) break;
                     string message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-                    Dispatcher.Invoke(() => ChatBox.AppendText("Server: " + message + "\n"));
-                }
-                catch
+                    Dispatcher.Invoke(() => txtOutputChat.AppendText("Server: " + message + "\n"));
+                }catch
                 {
                     break;
                 }
             }
         }
 
-        private void SendButton_Click(object sender, RoutedEventArgs e)
+        private void btnSendFile_Click(object sender, RoutedEventArgs e)
         {
             var openFileDialog = new OpenFileDialog
             {
-                Filter = "Image Files|*.png;*.jpg;*.jpeg;*.bmp;*webp"
+                Filter = ""
             };
 
             if (openFileDialog.ShowDialog() == true)
             {
-                var imageBytes = File.ReadAllBytes(openFileDialog.FileName);
-                string notif = ".You sent an image";
-                ChatBox.AppendText(notif.Trim('.')+"\n");
+                string name=openFileDialog.FileName;
+                var imageBytes = File.ReadAllBytes(name);
+                string extension = name.Split('.')[name.Split('.').Length-1];
+                string notif =$"You sent a file <.{extension}>";
+                txtOutputChat.AppendText(notif+"\n");
                 byte[] notifBytes = Encoding.ASCII.GetBytes(notif);
                 Send(notifBytes);
 
@@ -139,22 +151,6 @@ namespace Client_WPF
         public void Send(byte[] data) 
         {
             _networkStream.Write(data, 0, data.Length);
-        }
-
-        private void Window_Closed(object sender, EventArgs e)
-        {
-            if (_networkStream != null)
-                _networkStream.Close();
-            if (_tcpClient != null)
-                _tcpClient.Close();
-            if (_listenerThread != null && _listenerThread.IsAlive)
-                _listenerThread.Interrupt();
-        }
-
-        private void Window_Closing(object sender, CancelEventArgs e)
-        {
-            Disconect();
-            Application.Current.Shutdown();
         }
 
     }

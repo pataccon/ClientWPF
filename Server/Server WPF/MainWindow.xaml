@@ -7,8 +7,8 @@
         mc:Ignorable="d"
         Title="Server" Height="400" Width="600">
     <Grid>
-        <TextBox Name="ChatBox" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="10,10,10,100" IsReadOnly="True" VerticalScrollBarVisibility="Auto"/>
-        <TextBox Name="ServerMessageTextBox" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Margin="10,320,80,10"/>
-        <Button Name="SendMessageButton" Content="Send" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="60" Margin="0,0,10,10" Click="SendMessageButton_Click"/>
+        <TextBox Name="txtOutputChat" Margin="10,10,10,90" IsReadOnly="True" VerticalScrollBarVisibility="Auto"/>
+        <TextBox Name="txtInputMsg" VerticalAlignment="Bottom" Margin="10,0,55,10" Height="20"/>
+        <Button x:Name="btnSend" Content="◭" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="40" Margin="0,0,10,10" Click="btnSend_Click" FontWeight="Bold" Height="40" Background="#FF1463FF" BorderBrush="#FF148EFF" Foreground="White" FontSize="25"/>
     </Grid>
 </Window>

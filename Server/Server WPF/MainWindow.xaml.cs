@@ -14,10 +14,10 @@ namespace Server_WPF
     public partial class MainWindow : Window
     {
         private TcpListener _tcpListener;
-        private Thread _listenerThread; 
-        private TcpClient _client;
-        private NetworkStream _networkStream;
         private readonly int _port = 5000;
+        private TcpClient _tcpClient;
+        private NetworkStream _networkStream;
+        private Thread _waitThread; 
 
         public MainWindow()
         {
@@ -25,31 +25,28 @@ namespace Server_WPF
             StartServer();
         }
 
-        // Avvio del server
         private void StartServer()
         {
             _tcpListener = new TcpListener(IPAddress.Any, _port);
             _tcpListener.Start();
-            _listenerThread = new Thread(ListenForClients); // Thread principale
-            _listenerThread.Start();
+            _waitThread = new Thread(WaitForClients);
+            _waitThread.Start();
         }
 
-        // Ascolto e accettazione della connessioni
-        private void ListenForClients()
+        private void WaitForClients()
         {
             while (true)
             {
-                _client = _tcpListener.AcceptTcpClient();
-                _networkStream = _client.GetStream();
-                Dispatcher.Invoke(() => ChatBox.AppendText("Client connected.\n"));
+                _tcpClient = _tcpListener.AcceptTcpClient();
+                _networkStream = _tcpClient.GetStream();
+                Dispatcher.Invoke(() => txtOutputChat.AppendText("A client has connected.\n"));
 
-                Thread clientThread = new Thread(HandleClientComm);
-                clientThread.Start(_client);
+                Thread listenThread = new Thread(ListenMsg);
+                listenThread.Start(_tcpClient);
             }
         }
 
-        // Gestione comunicazione client
-        private void HandleClientComm(object clientObj)
+        private void ListenMsg(object clientObj)
         {
             TcpClient tcpClient = (TcpClient)clientObj;
             NetworkStream networkStream = tcpClient.GetStream();
@@ -57,62 +54,47 @@ namespace Server_WPF
             byte[] buffer = new byte[1024];
             int bytesRead;
             bool flag=false;
+            string extension = "";
+
             while ((bytesRead = networkStream.Read(buffer, 0, buffer.Length)) != 0)
             {
                 string message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-                if (message == ".You sent an image")
+                if (!(message.Contains( ':')))
                 {
-                    Dispatcher.Invoke(() => ChatBox.AppendText("Client sent an image\n"));
+                    extension =message.Split('<')[1].Trim('>');
+                    Dispatcher.Invoke(() => txtOutputChat.AppendText($"Client sent a file <{extension}>\n"));
                     flag = true;
                 }
                 else 
                 {
-                    Dispatcher.Invoke(() => ChatBox.AppendText("Client: " + message + "\n"));
+                    Dispatcher.Invoke(() => txtOutputChat.AppendText("Client" + message + "\n"));
                 }
                 if (flag) 
                 {
-                    int imageSize = reader.ReadInt32();
-                    byte[] imageBytes = reader.ReadBytes(imageSize);
-                    string imageName = "";
-                    string stringData = DateTime.Now.Year + "-" + DateTime.Now.Month + "-" + DateTime.Now.Day + "-" + DateTime.Now.Hour + "-" + DateTime.Now.Minute;
+                    int fileSize = reader.ReadInt32();
+                    byte[] fileBytes = reader.ReadBytes(fileSize);
+                    string fileName = "";
+                    string dateString = DateTime.Now.Year + "-" + DateTime.Now.Month + "-" + DateTime.Now.Day + "_" + DateTime.Now.Hour + "-" + DateTime.Now.Minute.ToString();
                     
-                    imageName = "image_" + stringData + ".png";
+                    fileName = "file_" + dateString+extension;
  
-                    File.WriteAllBytes(imageName, imageBytes);
+                    File.WriteAllBytes(fileName, fileBytes);
                 }
-                // Risposta al client
-                //byte[] response = Encoding.ASCII.GetBytes("Server: " + message);
-                //networkStream.Write(response, 0, response.Length);
+                
             }
         }
 
-        private void SendMessageButton_Click(object sender, RoutedEventArgs e)
+        private void btnSend_Click(object sender, RoutedEventArgs e)
         {
-            if (_networkStream != null && _client.Connected)
+            if (_networkStream != null && _tcpClient.Connected)
             {
-                string message = ServerMessageTextBox.Text;
+                string message = txtInputMsg.Text;
                 byte[] data = Encoding.ASCII.GetBytes(message);
                 _networkStream.Write(data, 0, data.Length);
-                Dispatcher.Invoke(() => ChatBox.AppendText("Server: " + message + "\n"));
-                ServerMessageTextBox.Clear();
+                Dispatcher.Invoke(() => txtOutputChat.AppendText("You: " + message + "\n"));
+                txtInputMsg.Clear();
             }
         }
 
-        private void Window_Closed(object sender, EventArgs e)
-        {
-            _tcpListener.Stop();
-            _listenerThread.Interrupt();
-            _client?.Close();
-        }
     }
 }
-//codice per ricevere l'immagine
-/*
-
-            int imageSize = reader.ReadInt32();
-            byte[] imageBytes = reader.ReadBytes(imageSize)
-
-            string recivedImageName = "received_image_" + new Random().Next(0,1000) + ".png";
-            string imageFileName = Path.Combine(_cacheDirectory, recivedImageName);
-            File.WriteAllBytes(imageFileName, imageBytes);
- */

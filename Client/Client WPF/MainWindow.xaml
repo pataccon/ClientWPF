@@ -8,12 +8,12 @@
          Title="Client" Height="400" Width="600">
     <Grid>
 
-        <TextBox Name="ChatBox" Margin="10,35,10,75" IsReadOnly="True" VerticalScrollBarVisibility="Auto" />
-        <TextBox Name="MessageTextBox" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Margin="10,320,80,10"/>
-        <Button x:Name="btnSend" Content="Send" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="60" Margin="0,0,10,10" Click="btnSend_Click"/>
-        <TextBox x:Name="txtInputip" HorizontalAlignment="Left" VerticalAlignment="Top" Width="150" Margin="10,10,0,0" Text="127.0.0.1"/>
-        <Button x:Name="btnConnect" Content="Connect" HorizontalAlignment="Left" VerticalAlignment="Top" Width="80" Margin="170,10,0,0" Click="btnConnect_Click"/>
-        <Button Name="btnDisconnect" Content="Disconnect" HorizontalAlignment="Left" VerticalAlignment="Top" Width="80" Margin="260,10,0,0" Click="btnDisconnect_Click" IsEnabled="False"/>
-        <Button Content="Invia Immagine" Margin="455,314,0,0" Click="SendButton_Click" Height="35" VerticalAlignment="Top" HorizontalAlignment="Left" Width="135"/>
+        <TextBox x:Name="txtOutputChat" Margin="10,44,10,55" IsReadOnly="True" VerticalScrollBarVisibility="Auto" />
+        <TextBox x:Name="txtInputMessage" VerticalAlignment="Bottom" Margin="131,0,55,10" Height="20"/>
+        <Button x:Name="btnSend" Content="◭" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="40" Margin="0,0,10,10" Click="btnSend_Click" IsEnabled="False" Height="40" FontWeight="Bold" Background="#FF1463FF" BorderBrush="#FF0079FF" Foreground="White" FontSize="25"/>
+        <TextBox x:Name="txtInputip" HorizontalAlignment="Left" VerticalAlignment="Top" Width="116" Margin="10,10,0,0" Text="localhost" Height="29"/>
+        <Button x:Name="btnConnect" Content="Connect" VerticalAlignment="Top" Margin="0,10,10,0" Click="btnConnect_Click" Height="29" Foreground="White" Background="#FF00B17C" BorderBrush="#FF00B17C" HorizontalAlignment="Right" Width="80"/>
+        <Button Name="btnDisconnect" Content="Disconnect" HorizontalAlignment="Right" VerticalAlignment="Top" Width="80" Margin="0,10,10,0" Click="btnDisconnect_Click" Visibility="Hidden" Height="29" Background="#FFFF4040" BorderBrush="#FFFF4040" Foreground="White" IsEnabled="False"/>
+        <Button x:Name="btnSendFile" Content="Send file" Margin="10,0,0,10" Click="btnSendFile_Click" HorizontalAlignment="Left" Width="116" Height="40" VerticalAlignment="Bottom" Background="#FF1463FF" Foreground="White" BorderBrush="#FF0079FF" IsEnabled="False"/>
     </Grid>
 </Window>
